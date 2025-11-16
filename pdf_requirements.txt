@@ -1,0 +1,109 @@
+Plaksha University Assignment 2 Max Marks: 20
+OP-CODE: Your Personalized Student Life Manager !!
+CS2011: Foundations of Computer Systems
+Instructor: Ankur Nahar
+Welcometothe"OP-CODE: Your Personalized Student Life Manager" project!! Inthisassignment,youwillcreate
+a comprehensive student life management system in MIPS assembly language. In this assignment you’re building
+a tool that you can actually use in your daily campus life to manage your schedule, track academic progress, and
+optimize your time. Here, every student’s program will be completely personalized based on their student ID and
+actual academic data. No two submissions should be same !!
+Core Requirements
+1. Personalized Student Profile System
+• Input: Your student ID (hardcoded in the program)
+• Output: Personalized profile showing your academic standing
+• Implementation: Use your ID to generate unique academic patterns
+2. Smart Daily Schedule Manager
+• Display YOUR actual class schedule for the current day
+• Show free time slots between classes
+• Calculate time remaining until next class
+• Suggest whether you should go to your hostel room, library or the canteen.
+3. Academic Progress Tracker
+• Calculate required SGPA to reach your target CGPA
+• Track credit completion progress
+• Visualize progress toward graduation
+• ImplementtherequiredSGPAcalculationusingPlaksha’sofficialCGPA/SGPAcalculationrules(useyourcurrent
+CGPA, completed credits, current semester credits, and target CGPA accordingly)
+4. Attendance Planning System
+• For each subject, calculate classes needed to reach attendance cutoff
+• Use university’s/course official attendance policy to determine how many additional classes are required to meet
+the attendance percentage cutoff
+• Show current attendance status and alerts
+5. Activity Recommendation Engine
+• Suggest study sessions, games, or club activities during free slots
+• Recommendations should be personalized based on your schedule gaps
+• Consider time of day and duration for appropriate suggestions
+1
+
+---PAGE BREAK---
+
+Plaksha University Assignment 2 Max Marks: 20
+Personalization System
+Your program MUST be personalized using the following scheme:
+Base Data (You MUST customize these):
+Base Data Template
+student_id: .word YOUR_ACTUAL_ID
+current_cgpa: .float YOUR_CURRENT_CGPA
+target_cgpa: .float YOUR_TARGET_CGPA
+total_credits: .word YOUR_COMPLETED_CREDITS
+semester_credits: .word YOUR_CURRENT_SEM_CREDITS
+Personalization Algorithm
+Yourschedule,coursepreferences,andactivitysuggestionswillbederivedfromyourstudentIDusingbitmanipulation
+and modular arithmetic:
+Example Personalization Techniques
+# Example personalization techniques you should implement:
+# - Course distribution pattern: (ID % 8) determines class timing template
+# - Activity preferences: (ID >> 2) % 4 determines your "campus personality"
+# - Study patterns: Sum of ID digits modulo 5 determines optimal study times
+These are examples; you should design and document your own consistent personalization logic.
+Expected Output Format
+Your program should display a comprehensive dashboard:
+Sample Output Layout
+=== CAMPUS BUDDY ===
+Student: [Your ID] | [Current Day]
+TODAY'S SCHEDULE:
+[Time] [Activity/Class] [Location]
+[Free slots with suggestions]
+ACADEMIC OVERVIEW:
+Current CGPA: X.XX | Credits: XXX/XXX
+Target CGPA: X.XX | Required this semester: X.XX
+ATTENDANCE PLANNER:
+[Subject]: X/X classes (X%) → Need Y of next Z classes
+SMART SUGGESTIONS:
+[Personalized activity recommendations]
+Menu: [1-Schedule] [2-Grades] [3-Attendance] [4-Suggestions] [5-Exit]
+Youdonot needtoimplementinteractiveinputhandlingforthemenu; awell-structured, readablesummaryoutput
+is sufficient.
+2
+
+---PAGE BREAK---
+
+Plaksha University Assignment 2 Max Marks: 20
+Submission Requirements
+1. Source Code File
+• campus_buddy_[StudentID].asm
+• Well-commented code explaining key algorithms
+• Proper MIPS assembly structure with .data and .text sections
+2. Demo Report (PDF)
+• Student Information: Name, ID, Program
+• Personalization Explanation: How your ID affects your program’s behavior
+• Feature Demonstration: Screenshots/output of key features working
+3. Testing Instructions
+• Brief instructions on how to test your specific features
+• Any special inputs needed to demonstrate personalization
+Grading Rubric
+Category Weight Criteria
+Personalization 5 Marks Effective use of student ID for unique behavior
+Functionality 8 Marks All core features implemented and working
+Code Quality 4 Marks Clean, well-commented, efficient MIPS code
+User Interface 2 Marks Clear, organized output and easy navigation
+Documentation 1 Marks Clear demo report and testing instructions
+Important Policies
+• Individual Work: Thisisanindividualassignment. Whilediscussionisencouraged,codecopyingwillresultin
+zero marks.
+• AI Assistance: You may use AI for learning concepts, but the final code must be your own.
+• Final Date and Time of Submission: 25 November 2025, 11:59 PM.
+• Late Submission: A penalty of 1 mark per day for the first day late, and 2 marks per day for each subsequent
+day.
+• Testing: We will run your code with YOUR student ID to verify personalization works correctly.
+Good luck, and enjoy creating your very own OP-CODE, your campus buddy !!
+3
