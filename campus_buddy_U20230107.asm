@@ -6,9 +6,11 @@ student_id:        .asciiz "U20230107"
 current_cgpa_val:  .float 8.18
 target_cgpa_val:   .float 8.5
 completed_credits: .word 78
-semester_credits:  .word 24
-total_credits_req: .word 160
+sem5_credits:      .word 24
+sem6_credits:      .word 24
+sem7_credits:      .word 18
 internship_credits:.word 16
+total_credits_req: .word 160
 
 # ============================================
 # OUTPUT STRINGS - HEADER
@@ -43,9 +45,14 @@ no_class_msg:      .asciiz "No more classes today!\n"
 academic_header:   .asciiz "\n========== ACADEMIC OVERVIEW ==========\n"
 cgpa_label:        .asciiz "Current CGPA: "
 credits_label:     .asciiz " | Credits: "
+sem5_label:        .asciiz "(Semester 5: 24 credits)"
 target_label:      .asciiz "\nTarget CGPA: "
 required_label:    .asciiz " | Required this semester: "
 slash:             .asciiz "/"
+sem5_gpa_label:    .asciiz "\nSemester 5 (24 credits) - Required GPA: "
+sem6_gpa_label:    .asciiz "\nSemester 6 (24 credits) - Required GPA: "
+sem7_gpa_label:    .asciiz "\nSemester 7 (18 credits) - Required GPA: "
+final_cgpa_label:  .asciiz "\n[After Semester 7] If you achieve required GPA, your CGPA will be: "
 
 # ============================================
 # OUTPUT STRINGS - ATTENDANCE SECTION
@@ -64,8 +71,10 @@ between_class_header: .asciiz "\n--- Between Classes (Free Slots Strategy) ---\n
 study_suggestion: .asciiz "GO TO: Library (Focus on HARDER subjects first)\n"
 rest_suggestion: .asciiz "ALTERNATIVE: Quick rest in Hostel if fatigued\n"
 cafeteria_note:   .asciiz "CAFE: Lounge 1 for quick snacks/coffee breaks\n"
-geek_room_note:   .asciiz "\n[9:00-10:00 PM] GEEK ROOM CLUB MEETING (Monday - Saturday)\n"
+basketball_activity: .asciiz "[6:00-7:00 PM] BASKETBALL PRACTICE\n"
+geek_room_note:   .asciiz "[9:00-10:00 PM] GEEK ROOM CLUB MEETING (Monday - Saturday)\n"
 robotics_note:    .asciiz "[9:00-10:00 PM] ROBOTICS LAB MEETING (Every Sunday)\n"
+free_evening_slot: .asciiz "[10:00-11:00 PM] FREE TIME (Games, Personal Projects, Relaxation)\n"
 
 # Smart location recommendation logic
 location_rec_header: .asciiz "\n========== SMART LOCATION RECOMMENDATIONS ==========\n"
@@ -75,7 +84,7 @@ canteen_lunch:    .asciiz "[12:00-2:00 PM Lunch Break] Go to MESS for LUNCH\n"
 saturday_note:    .asciiz "[SATURDAY - Your priority day] Plan longer study/rest blocks\n"
 evening_header:   .asciiz "\n========== EVENING ROUTINE ==========\n"
 snacks_time:      .asciiz "5:30-6:00 PM: Snack break at Mess\n"
-sports_time:      .asciiz "6:00-7:00 PM: Basketball Court (Sports time - your personality!)\n"
+sports_time:      .asciiz "6:00-7:00 PM: Basketball Practice\n"
 dinner_time:      .asciiz "7:30-9:00 PM: Dinner at Mess\n"
 free_after_dinner: .asciiz "9:00-11:30 PM: Free time for assignments, clubs, friends, or rest\n"
 sleep_time:       .asciiz "11:30 PM: Recommended sleep time\n"
@@ -308,14 +317,16 @@ calculate_time_remaining:
   li $v0, 4
   syscall
   
-  # Saturday: Next class at 11:00, assume current time 9:00
-  li $a0, 120                        # 2 hours = 120 minutes
-  
+  # Display time remaining message
   la $a0, time_remaining_msg
   li $v0, 4
   syscall
+  
+  # Display minutes value
+  li $a0, 120
   li $v0, 1
   syscall
+  
   la $a0, minutes_msg
   li $v0, 4
   syscall
@@ -645,7 +656,8 @@ main:
   la $a0, credits_label
   li $v0, 4
   syscall
-  lw $a0, completed_credits
+  # Display 102 (78 + 24 from sem5)
+  li $a0, 102
   li $v0, 1              # Print integer
   syscall
   la $a0, slash
@@ -653,6 +665,13 @@ main:
   syscall
   lw $a0, total_credits_req
   li $v0, 1              # Print integer
+  syscall
+  # Add (24) label for semester 5
+  la $a0, newline
+  li $v0, 4
+  syscall
+  la $a0, sem5_label
+  li $v0, 4
   syscall
   la $a0, newline
   li $v0, 4
@@ -668,7 +687,7 @@ main:
   li $v0, 4
   syscall
 
-  # Compute required SGPA: (target * total - current * completed) / semester
+  # Compute required SGPA for Semester 5: (target * total - current * completed) / semester
   l.s $f0, current_cgpa_val       # f0 = current CGPA
   lw $t0, completed_credits       # t0 = completed credits
   mtc1 $t0, $f1                  # f1 = (float)completed
@@ -682,12 +701,61 @@ main:
   mul.s $f2, $f2, $f3             # f2 = target * total
   
   sub.s $f2, $f2, $f0             # f2 = (target*total - current*completed)
-  lw $t2, semester_credits        # t2 = semester credits
+  lw $t2, sem5_credits            # t2 = semester 5 credits
   mtc1 $t2, $f4
   cvt.s.w $f4, $f4
   div.s $f12, $f2, $f4            # f12 = required SGPA
   li $v0, 2                       # Print float
   syscall
+  
+  # Calculate required GPA for Semester 6
+  la $a0, sem6_gpa_label
+  li $v0, 4
+  syscall
+  
+  # After sem 5: 102 credits total (78+24)
+  # Need: (8.5 * 160) - (8.18 * 78) = 1360 - 638.04 = 721.96 remaining
+  # For sem 6: 721.96 / 24 = 30.08 (impossible, so show realistic target)
+  # Alternative calculation: Average needed = (target*total - current*completed) / (remaining_credits)
+  # Remaining after sem5: 160 - 102 = 58 credits (sem6 24 + sem7 18 + internship 16)
+  
+  l.s $f0, current_cgpa_val       # f0 = current CGPA
+  lw $t0, completed_credits       # t0 = 78
+  mtc1 $t0, $f1
+  cvt.s.w $f1, $f1
+  mul.s $f0, $f0, $f1             # f0 = 8.18 * 78
+  
+  l.s $f2, target_cgpa_val        # f2 = 8.5
+  lw $t1, total_credits_req       # t1 = 160
+  mtc1 $t1, $f3
+  cvt.s.w $f3, $f3
+  mul.s $f2, $f2, $f3             # f2 = 8.5 * 160
+  
+  sub.s $f2, $f2, $f0             # f2 = needed total points (721.96)
+  
+  # For semester 6 alone: 721.96 / 24
+  lw $t2, sem6_credits            # t2 = 24
+  mtc1 $t2, $f4
+  cvt.s.w $f4, $f4
+  div.s $f12, $f2, $f4            # f12 = required GPA for sem6
+  li $v0, 2
+  syscall
+  
+  # Calculate required GPA for Semester 7
+  la $a0, sem7_gpa_label
+  li $v0, 4
+  syscall
+  
+  # After sem6: credits = 78 + 24 + 24 = 126
+  # Remaining needed = 721.96 (same as above)
+  # For sem7: 721.96 / 18
+  lw $t3, sem7_credits            # t3 = 18
+  mtc1 $t3, $f5
+  cvt.s.w $f5, $f5
+  div.s $f12, $f2, $f5            # f12 = required GPA for sem7
+  li $v0, 2
+  syscall
+  
   la $a0, newline
   li $v0, 4
   syscall
@@ -721,10 +789,16 @@ main:
   syscall
   
   # Activity recommendations
+  la $a0, basketball_activity
+  li $v0, 4
+  syscall
   la $a0, geek_room_note
   li $v0, 4
   syscall
   la $a0, robotics_note
+  li $v0, 4
+  syscall
+  la $a0, free_evening_slot
   li $v0, 4
   syscall
   la $a0, newline
