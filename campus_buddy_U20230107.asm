@@ -28,6 +28,17 @@ divider:           .asciiz "=====================================\n"
 person_header:     .asciiz "\n=== PERSONALIZATION PROFILE ===\n"
 focus_day_str:     .asciiz "Focus Day: "
 focus_day_explain: .asciiz " (Saturday is priority)\n"
+activity_pref_str: .asciiz "Campus Personality: "
+personality_sports:.asciiz "Sports & Physical Activities Enthusiast\n"
+personality_library:.asciiz "Library & Study Focused Scholar\n"
+personality_wellness:.asciiz "Wellness & Balanced Lifestyle Advocate\n"
+personality_social:.asciiz "Social & Group Study Butterfly\n"
+study_time_str:    .asciiz "Optimal Study Window: "
+study_morning:     .asciiz "Morning (9-11 AM) - Fresh mind, best for theory\n"
+study_afternoon:   .asciiz "Afternoon (2-4 PM) - Post-lunch review sessions\n"
+study_evening:     .asciiz "Evening (6-8 PM) - Problem-solving & practical work\n"
+study_late:        .asciiz "Late Night (9-11 PM) - Revision & assignments\n"
+study_midnight:    .asciiz "Post-midnight (11 PM-1 AM) - Deep focus work\n"
 
 # ============================================
 # OUTPUT STRINGS - SCHEDULE SECTION
@@ -95,10 +106,29 @@ difficulty_rating: .asciiz ": Difficulty Level "
 # ============================================
 # PERSONALIZATION DATA (CUSTOM LOGIC)
 # ============================================
-# Focus Day: ID % 6 = 107 % 6 = 5 (Saturday is priority day)
-# Activity Preference: (ID & 0x7) % 3 = 7 % 3 = 1 (Sports & Social)
+# PERSONALIZATION ALGORITHM EXPLANATION:
+# For Student ID U20230107 (numeric: 20230107):
+#
+# 1. FOCUS DAY: ID % 6 = 107 % 6 = 5 (Saturday)
+#    - Determines which day is priority for longer study blocks
+#    - Saturday: Perfect for 2-3 hour study sessions
+#
+# 2. CAMPUS PERSONALITY: (Last digit >> 2) % 4 = (7 >> 2) % 4 = 1
+#    - 0 = Library Scholar (prefers quiet study spaces)
+#    - 1 = Sports Enthusiast (prefers physical activities + study breaks)
+#    - 2 = Wellness Advocate (prefers balanced schedule)
+#    - 3 = Social Butterfly (prefers group study + clubs)
+#
+# 3. OPTIMAL STUDY TIME: Sum of ID digits % 5 = (2+0+2+3+0+1+0+7) % 5 = 15 % 5 = 0
+#    - 0 = Morning (9-11 AM) - Fresh mind
+#    - 1 = Afternoon (2-4 PM) - Post-lunch focus
+#    - 2 = Evening (6-8 PM) - Problem solving
+#    - 3 = Late Night (9-11 PM) - Revision
+#    - 4 = Post-midnight (11 PM-1 AM) - Deep work
+
 focus_day:         .word 5                  # 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat
-activity_pref:     .word 1                  # 0=Library, 1=Sports, 2=Wellness
+campus_personality:.word 1                  # 0=Library, 1=Sports, 2=Wellness, 3=Social
+optimal_study_time:.word 0                  # 0=Morning, 1=Afternoon, 2=Evening, 3=Late, 4=Post-midnight
 
 # ============================================
 # WEEKLY SCHEDULE DATA (Real Classes - User Provided)
@@ -251,6 +281,88 @@ display_personalization:
   la $a0, focus_day_explain
   li $v0, 4
   syscall
+  
+  # Campus Personality based on (ID >> 2) % 4
+  la $a0, activity_pref_str
+  li $v0, 4
+  syscall
+  lw $t0, campus_personality
+  
+  # Display personality type based on value
+  beq $t0, 0, personality_library_type
+  beq $t0, 1, personality_sports_type
+  beq $t0, 2, personality_wellness_type
+  beq $t0, 3, personality_social_type
+  j skip_personality
+  
+personality_library_type:
+  la $a0, personality_library
+  li $v0, 4
+  syscall
+  j skip_personality
+  
+personality_sports_type:
+  la $a0, personality_sports
+  li $v0, 4
+  syscall
+  j skip_personality
+  
+personality_wellness_type:
+  la $a0, personality_wellness
+  li $v0, 4
+  syscall
+  j skip_personality
+  
+personality_social_type:
+  la $a0, personality_social
+  li $v0, 4
+  syscall
+  
+skip_personality:
+  # Optimal Study Time based on sum of digits % 5
+  la $a0, study_time_str
+  li $v0, 4
+  syscall
+  lw $t1, optimal_study_time
+  
+  # Display study time based on value
+  beq $t1, 0, study_morning_type
+  beq $t1, 1, study_afternoon_type
+  beq $t1, 2, study_evening_type
+  beq $t1, 3, study_late_type
+  beq $t1, 4, study_midnight_type
+  j skip_study_time
+  
+study_morning_type:
+  la $a0, study_morning
+  li $v0, 4
+  syscall
+  j skip_study_time
+  
+study_afternoon_type:
+  la $a0, study_afternoon
+  li $v0, 4
+  syscall
+  j skip_study_time
+  
+study_evening_type:
+  la $a0, study_evening
+  li $v0, 4
+  syscall
+  j skip_study_time
+  
+study_late_type:
+  la $a0, study_late
+  li $v0, 4
+  syscall
+  j skip_study_time
+  
+study_midnight_type:
+  la $a0, study_midnight
+  li $v0, 4
+  syscall
+  
+skip_study_time:
   la $a0, newline
   li $v0, 4
   syscall
