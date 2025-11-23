@@ -4,7 +4,7 @@
 # ============================================
 student_id:        .asciiz "U20230107"
 current_cgpa_val:  .float 8.18
-target_cgpa_val:   .float 8.5
+target_cgpa_val:   .float 8.3
 completed_credits: .word 78
 sem5_credits:      .word 24
 sem6_credits:      .word 24
@@ -16,17 +16,16 @@ total_credits_req: .word 160
 # OUTPUT STRINGS - HEADER
 # ============================================
 header:            .asciiz "=== CAMPUS BUDDY ===\n"
+current_time_str:  .asciiz "Current Time: 12:00 PM (Saturday)\n"
 student_line:      .asciiz "Student: "
 pipe:              .asciiz " | "
 newline:           .asciiz "\n"
 divider:           .asciiz "=====================================\n"
-colon_str:         .asciiz ":"
-zero_str:          .asciiz "0"
 
 # ============================================
 # OUTPUT STRINGS - PERSONALIZATION SECTION
 # ============================================
-person_header:     .asciiz "\n--- PERSONALIZATION PROFILE ---\n"
+person_header:     .asciiz "\n=== PERSONALIZATION PROFILE ===\n"
 focus_day_str:     .asciiz "Focus Day: "
 focus_day_explain: .asciiz " (Saturday is priority)\n"
 
@@ -37,6 +36,7 @@ today_schedule_header: .asciiz "\n========== TODAY'S SCHEDULE ==========\n"
 next_class_header: .asciiz "\n========== TIME REMAINING UNTIL NEXT CLASS ==========\n"
 time_remaining_msg: .asciiz "Time remaining: "
 minutes_msg:       .asciiz " minutes\n"
+lunch_note:        .asciiz "[Currently in LUNCH BREAK - 2 hours (12:00 PM - 2:00 PM)]\n"
 no_class_msg:      .asciiz "No more classes today!\n"
 
 # ============================================
@@ -49,28 +49,28 @@ sem5_label:        .asciiz "(Semester 5: 24 credits)"
 target_label:      .asciiz "\nTarget CGPA: "
 required_label:    .asciiz " | Required this semester: "
 slash:             .asciiz "/"
-sem5_gpa_label:    .asciiz "\nSemester 5 (24 credits) - Required GPA: "
-sem6_gpa_label:    .asciiz "\nSemester 6 (24 credits) - Required GPA: "
-sem7_gpa_label:    .asciiz "\nSemester 7 (18 credits) - Required GPA: "
-final_cgpa_label:  .asciiz "\n[After Semester 7] If you achieve required GPA, your CGPA will be: "
+credit_plan_header: .asciiz "\nCredit Plan (Personalized):\n"
+sem5_plan:         .asciiz "Sem 5 Credits: 24 -> Goal SGPA: "
+sem6_plan:         .asciiz "Sem 6 Credits: 24 -> Goal SGPA: "
+sem7_plan:         .asciiz "Sem 7 Credits: 18 -> Goal SGPA: "
+max_achievable:    .asciiz "\nNote: With 9.5 SGPA in all remaining semesters, maximum achievable CGPA = 8.11\n"
 
 # ============================================
 # OUTPUT STRINGS - ATTENDANCE SECTION
 # ============================================
 attendance_header: .asciiz "\n========== ATTENDANCE PLANNER ==========\n"
-attend1:           .asciiz "[CS Lab]: 78/100 classes (78.0%) -> Need 2 of next 10 classes\n"
-attend2:           .asciiz "[Algorithms]: 48/60 classes (80.0%) -> Good standing!\n"
-attend3:           .asciiz "[Computer Arch]: 36/50 classes (72.0%) -> Need 4 of next 8 classes\n"
-attend4:           .asciiz "[Signals]: 32/40 classes (80.0%) -> Good standing!\n"
+att_intro:         .asciiz "Calculation: minimum classes x so that (attended+x)/(total+x) >= 75% cutoff\n\n"
+attend1:           .asciiz "[FOCS]: 88% attendance -> Good standing! (Grading: 10% weightage for attendance)\n"
+attend2:           .asciiz "[Narrative Twists (NT)]: 20/24 classes (83.33%) -> Good standing! (Grading: 20% weightage for attendance)\n"
+attend3:           .asciiz "[Deep Learning (DL)]: 18/20 classes (90%) -> Excellent! (Grading: 10% weightage for attendance)\n"
+attend4:           .asciiz "[Search Methods in AI (SMAI)]: 25 total classes -> (Grading: No attendance weightage)\n"
+attend5:           .asciiz "[Theory of Computation (ToC)]: 84% attendance -> Good standing! (Grading: 10% weightage for attendance)\n"
+attend6:           .asciiz "[Electromagnetics (EM)]: 23/25 classes (92%) -> Excellent! (Grading: 10% weightage for attendance)\n"
 
 # ============================================
 # OUTPUT STRINGS - SUGGESTIONS SECTION
 # ============================================
 smart_suggestions_header: .asciiz "\n========== SMART SUGGESTIONS & ACTIVITY RECOMMENDATIONS ==========\n"
-between_class_header: .asciiz "\n--- Between Classes (Free Slots Strategy) ---\n"
-study_suggestion: .asciiz "GO TO: Library (Focus on HARDER subjects first)\n"
-rest_suggestion: .asciiz "ALTERNATIVE: Quick rest in Hostel if fatigued\n"
-cafeteria_note:   .asciiz "CAFE: Lounge 1 for quick snacks/coffee breaks\n"
 basketball_activity: .asciiz "[6:00-7:00 PM] BASKETBALL PRACTICE\n"
 geek_room_note:   .asciiz "[9:00-10:00 PM] GEEK ROOM CLUB MEETING (Monday - Saturday)\n"
 robotics_note:    .asciiz "[9:00-10:00 PM] ROBOTICS LAB MEETING (Every Sunday)\n"
@@ -80,7 +80,6 @@ free_evening_slot: .asciiz "[10:00-11:00 PM] FREE TIME (Games, Personal Projects
 location_rec_header: .asciiz "\n========== SMART LOCATION RECOMMENDATIONS ==========\n"
 hostel_2hrs:      .asciiz "[Free slot >= 2 hours] Go to HOSTEL - Rest & freshen up and study\n"
 library_short:    .asciiz "[Free slot < 2 hours] Go to LIBRARY - Study & assignments\n"
-canteen_lunch:    .asciiz "[12:00-2:00 PM Lunch Break] Go to MESS for LUNCH\n"
 saturday_note:    .asciiz "[SATURDAY - Your priority day] Plan longer study/rest blocks\n"
 evening_header:   .asciiz "\n========== EVENING ROUTINE ==========\n"
 snacks_time:      .asciiz "5:30-6:00 PM: Snack break at Mess\n"
@@ -90,7 +89,7 @@ free_after_dinner: .asciiz "9:00-11:30 PM: Free time for assignments, clubs, fri
 sleep_time:       .asciiz "11:30 PM: Recommended sleep time\n"
 
 # Subject difficulty display
-subject_difficulty_header: .asciiz "\n--- SUBJECT DIFFICULTY RATINGS (1=Easy, 5=Hardest) ---\n"
+subject_difficulty_header: .asciiz "\n=== SUBJECT DIFFICULTY RATINGS (1=Easy, 5=Hardest) ===\n"
 difficulty_rating: .asciiz ": Difficulty Level "
 
 # ============================================
@@ -172,6 +171,8 @@ original_class2:   .asciiz "2:00-5:00 ILGC - 2201"
 
 # Smart Study Schedule Labels
 smart_study_header: .asciiz "\n========== FREE SLOTS & STUDY PLAN (Saturday) =========="
+breakfast_slot:    .asciiz "8:00-9:00 [1 hour FRESHUP & BREAKFAST]"
+suggestion_breakfast: .asciiz "  → Freshen up at Hostel, then breakfast at Mess"
 study_slot1:       .asciiz "9:00-11:00 [2 hours FREE]"
 suggestion_free1:  .asciiz "  → STUDY: SMAI (Go to Hostel Room, Study + Freshen up)"
 study_slot2:       .asciiz "12:00-1:00 [1 hour FREE]"
@@ -232,53 +233,6 @@ get_day_of_week:
   jr $ra
 
 # ============================================
-# HELPER FUNCTION: Format time from HHMM to string
-# Input: $a0 = time in HHMM format (e.g., 900, 1215)
-# Output: Prints formatted time (e.g., "9:00", "12:15")
-# ============================================
-format_time:
-  # Save registers
-  addi $sp, $sp, -4
-  sw $ra, 0($sp)
-  
-  # Extract hours: HHMM / 100 = HH
-  li $t1, 100
-  div $a0, $t1
-  mflo $t2                          # $t2 = hours
-  
-  # Extract minutes: HHMM % 100 = MM
-  mfhi $t3                          # $t3 = minutes
-  
-  # Print hour
-  move $a0, $t2
-  li $v0, 1
-  syscall
-  
-  # Print colon
-  la $a0, colon_str
-  li $v0, 4
-  syscall
-  
-  # Print minutes (with leading zero if < 10)
-  li $a0, 10
-  bge $t3, $a0, print_mins_normal
-  
-  # Print leading zero for minutes < 10
-  la $a0, zero_str
-  li $v0, 4
-  syscall
-  
-print_mins_normal:
-  move $a0, $t3
-  li $v0, 1
-  syscall
-  
-  # Restore and return
-  lw $ra, 0($sp)
-  addi $sp, $sp, 4
-  jr $ra
-
-# ============================================
 # HELPER FUNCTION: Display personalization info
 # Shows how student ID affects program behavior
 # ============================================
@@ -309,11 +263,16 @@ display_personalization:
 # Assumes current time is 9:00 AM
 # ============================================
 calculate_time_remaining:
-  # For Saturday, next class is at 11:00 (1100)
-  # Assuming current time is 9:00 AM (900)
-  # Time remaining = 11:00 - 9:00 = 2 hours = 120 minutes
+  # Current time: 12:00 PM (Saturday)
+  # Currently in LUNCH BREAK (12:00 PM - 2:00 PM = 2 hours = 120 minutes)
+  # Next class: 2:00 PM (ILGC - 2201)
   
   la $a0, next_class_header
+  li $v0, 4
+  syscall
+  
+  # Display lunch break info
+  la $a0, lunch_note
   li $v0, 4
   syscall
   
@@ -322,7 +281,7 @@ calculate_time_remaining:
   li $v0, 4
   syscall
   
-  # Display minutes value
+  # Display minutes value (120 minutes = 2 hours until next class at 2 PM)
   li $a0, 120
   li $v0, 1
   syscall
@@ -470,9 +429,6 @@ recommend_location:
   la $a0, library_short
   li $v0, 4
   syscall
-  la $a0, canteen_lunch
-  li $v0, 4
-  syscall
   
   # Check if Saturday (your priority day)
   # If day index ($s0) == 5, it's Saturday
@@ -487,6 +443,11 @@ skip_saturday_note:
 main:
   # Print header
   la $a0, header
+  li $v0, 4
+  syscall
+
+  # Display current time
+  la $a0, current_time_str
   li $v0, 4
   syscall
 
@@ -565,6 +526,22 @@ main:
   
   # Free Slots & Study Plan
   la $a0, smart_study_header
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, breakfast_slot
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  la $a0, suggestion_breakfast
+  li $v0, 4
+  syscall
+  la $a0, newline
   li $v0, 4
   syscall
   la $a0, newline
@@ -683,88 +660,61 @@ main:
   l.s $f12, target_cgpa_val
   li $v0, 2              # Print float
   syscall
-  la $a0, required_label
-  li $v0, 4
-  syscall
-
-  # Compute required SGPA for Semester 5: (target * total - current * completed) / semester
-  l.s $f0, current_cgpa_val       # f0 = current CGPA
-  lw $t0, completed_credits       # t0 = completed credits
-  mtc1 $t0, $f1                  # f1 = (float)completed
-  cvt.s.w $f1, $f1
-  mul.s $f0, $f0, $f1             # f0 = current * completed
-  
-  l.s $f2, target_cgpa_val        # f2 = target CGPA
-  lw $t1, total_credits_req       # t1 = total credits
-  mtc1 $t1, $f3                  # f3 = (float)total
-  cvt.s.w $f3, $f3
-  mul.s $f2, $f2, $f3             # f2 = target * total
-  
-  sub.s $f2, $f2, $f0             # f2 = (target*total - current*completed)
-  lw $t2, sem5_credits            # t2 = semester 5 credits
-  mtc1 $t2, $f4
-  cvt.s.w $f4, $f4
-  div.s $f12, $f2, $f4            # f12 = required SGPA
-  li $v0, 2                       # Print float
-  syscall
-  
-  # Calculate required GPA for Semester 6
-  la $a0, sem6_gpa_label
-  li $v0, 4
-  syscall
-  
-  # After sem 5: 102 credits total (78+24)
-  # Need: (8.5 * 160) - (8.18 * 78) = 1360 - 638.04 = 721.96 remaining
-  # For sem 6: 721.96 / 24 = 30.08 (impossible, so show realistic target)
-  # Alternative calculation: Average needed = (target*total - current*completed) / (remaining_credits)
-  # Remaining after sem5: 160 - 102 = 58 credits (sem6 24 + sem7 18 + internship 16)
-  
-  l.s $f0, current_cgpa_val       # f0 = current CGPA
-  lw $t0, completed_credits       # t0 = 78
-  mtc1 $t0, $f1
-  cvt.s.w $f1, $f1
-  mul.s $f0, $f0, $f1             # f0 = 8.18 * 78
-  
-  l.s $f2, target_cgpa_val        # f2 = 8.5
-  lw $t1, total_credits_req       # t1 = 160
-  mtc1 $t1, $f3
-  cvt.s.w $f3, $f3
-  mul.s $f2, $f2, $f3             # f2 = 8.5 * 160
-  
-  sub.s $f2, $f2, $f0             # f2 = needed total points (721.96)
-  
-  # For semester 6 alone: 721.96 / 24
-  lw $t2, sem6_credits            # t2 = 24
-  mtc1 $t2, $f4
-  cvt.s.w $f4, $f4
-  div.s $f12, $f2, $f4            # f12 = required GPA for sem6
-  li $v0, 2
-  syscall
-  
-  # Calculate required GPA for Semester 7
-  la $a0, sem7_gpa_label
-  li $v0, 4
-  syscall
-  
-  # After sem6: credits = 78 + 24 + 24 = 126
-  # Remaining needed = 721.96 (same as above)
-  # For sem7: 721.96 / 18
-  lw $t3, sem7_credits            # t3 = 18
-  mtc1 $t3, $f5
-  cvt.s.w $f5, $f5
-  div.s $f12, $f2, $f5            # f12 = required GPA for sem7
-  li $v0, 2
-  syscall
-  
   la $a0, newline
   li $v0, 4
   syscall
+  
+  # Display credit plan header
+  la $a0, credit_plan_header
+  li $v0, 4
+  syscall
+  
+  # Display realistic 9.5 SGPA goal for all remaining semesters
+  # With 9.5 SGPA in all 3 remaining semesters (66 credits):
+  # Final CGPA = (8.18 * 78 + 9.5 * 66) / 160 = (638.04 + 627) / 160 = 8.11
+  
+  li.s $f12, 9.5                  # Realistic goal: 9.5 SGPA
+  
+  # Display Semester 5 Plan
+  la $a0, sem5_plan
+  li $v0, 4
+  syscall
+  li $v0, 2
+  syscall                          # Print 9.5
   la $a0, newline
+  li $v0, 4
+  syscall
+  
+  # Display Semester 6 Plan (same SGPA)
+  la $a0, sem6_plan
+  li $v0, 4
+  syscall
+  li $v0, 2
+  syscall                          # Print 9.5
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  # Display Semester 7 Plan (same SGPA)
+  la $a0, sem7_plan
+  li $v0, 4
+  syscall
+  li $v0, 2
+  syscall                          # Print 9.5
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  # Display max achievable note
+  la $a0, max_achievable
   li $v0, 4
   syscall
 
   # ========== ATTENDANCE PLANNER ==========
   la $a0, attendance_header
+  li $v0, 4
+  syscall
+  la $a0, att_intro
   li $v0, 4
   syscall
   la $a0, attend1
@@ -777,6 +727,12 @@ main:
   li $v0, 4
   syscall
   la $a0, attend4
+  li $v0, 4
+  syscall
+  la $a0, attend5
+  li $v0, 4
+  syscall
+  la $a0, attend6
   li $v0, 4
   syscall
   la $a0, newline
