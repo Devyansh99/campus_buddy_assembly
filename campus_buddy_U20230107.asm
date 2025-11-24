@@ -3,6 +3,8 @@
 # PERSONAL PROFILE DATA (CUSTOMIZE AS NEEDED)
 # ============================================
 student_id:        .asciiz "U20230107"
+student_id_prefix: .asciiz "U2023"
+constructed_uid:   .space 20              # Buffer for constructed UID (e.g., U2023XXX)
 current_cgpa_val:  .float 8.18
 target_cgpa_val:   .float 8.3
 completed_credits: .word 78
@@ -18,9 +20,12 @@ total_credits_req: .word 160
 header:            .asciiz "=== CAMPUS BUDDY ===\n"
 input_prompt:      .asciiz "Enter the last 3 digits of your Student ID: "
 input_buffer:      .space 10
+time_input_prompt: .asciiz "Enter current time (HHMM format, e.g., 1200 for 12:00 PM): "
+time_buffer:       .space 10
 verification_pass: .asciiz "\n✓ Welcome! Displaying your personalized dashboard...\n"
-verification_fail: .asciiz "\n✗ Incorrect ID. Access denied.\n"
-current_time_str:  .asciiz "Current Time: 12:00 PM (Saturday)\n"
+verification_fail: .asciiz "\n✗ Invalid input. Access denied.\n"
+current_time_str:  .asciiz "Current Time: "
+time_format:       .asciiz ":00\n"
 student_line:      .asciiz "Student: "
 pipe:              .asciiz " | "
 newline:           .asciiz "\n"
@@ -573,13 +578,274 @@ recommend_location:
   
   jr $ra
 
+# ========================================
+# Display dynamic schedule based on day ($a0 = day index 0-5)
+# ========================================
+display_day_schedule:
+  move $t0, $a0                      # $t0 = day index
+  
+  # Create array of class pointers for each day
+  # Day 0 = Monday, 1 = Tuesday, ..., 5 = Saturday
+  
+  # Switch on day index
+  beq $t0, 0, display_monday
+  beq $t0, 1, display_tuesday
+  beq $t0, 2, display_wednesday
+  beq $t0, 3, display_thursday
+  beq $t0, 4, display_friday
+  beq $t0, 5, display_saturday
+  jr $ra
+  
+display_monday:
+  la $a0, monday_class1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, monday_class2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, monday_lunch
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, monday_class3
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  jr $ra
+
+display_tuesday:
+  la $a0, tuesday_free1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, tuesday_class1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, tuesday_lunch
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, tuesday_class2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, tuesday_free2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, tuesday_class3
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  jr $ra
+
+display_wednesday:
+  la $a0, wednesday_class1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, wednesday_free1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, wednesday_class2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, wednesday_lunch
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, wednesday_class3
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, wednesday_free2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, wednesday_class4
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  jr $ra
+
+display_thursday:
+  la $a0, thursday_class1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, thursday_class2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, thursday_lunch
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, thursday_class3
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, thursday_free1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, thursday_class4
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  jr $ra
+
+display_friday:
+  la $a0, friday_class1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, friday_class2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, friday_class3
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, friday_lunch
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, friday_free1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, friday_class4
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  jr $ra
+
+display_saturday:
+  la $a0, saturday_free1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, saturday_class1
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, saturday_free2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  
+  la $a0, saturday_class2
+  li $v0, 4
+  syscall
+  la $a0, newline
+  li $v0, 4
+  syscall
+  jr $ra
+
 main:
   # Print header
   la $a0, header
   li $v0, 4
   syscall
 
-  # Input verification - ask for last 3 digits
+  # ===== INPUT 1: STUDENT ID =====
   la $a0, input_prompt
   li $v0, 4
   syscall
@@ -590,28 +856,77 @@ main:
   li $v0, 8
   syscall
   
-  # Verify input - expected "107" (last 3 digits of U20230107)
+  # Verify that input is 3 digits (simple validation)
   la $t0, input_buffer
   lb $t1, 0($t0)                     # First char
   lb $t2, 1($t0)                     # Second char
   lb $t3, 2($t0)                     # Third char
   
-  # Check if "107" (ASCII: 1=49, 0=48, 7=55)
-  li $t4, 49                         # ASCII '1'
-  li $t5, 48                         # ASCII '0'
-  li $t6, 55                         # ASCII '7'
+  # Check if all are valid digits (ASCII 48-57)
+  sub $t1, $t1, 48
+  blt $t1, 0, invalid_input
+  bgt $t1, 9, invalid_input
   
-  bne $t1, $t4, access_denied
-  bne $t2, $t5, access_denied
-  bne $t3, $t6, access_denied
+  sub $t2, $t2, 48
+  blt $t2, 0, invalid_input
+  bgt $t2, 9, invalid_input
   
-  # Access granted
+  sub $t3, $t3, 48
+  blt $t3, 0, invalid_input
+  bgt $t3, 9, invalid_input
+  
+  # ===== INPUT 2: TIME (HHMM format) =====
+  la $a0, time_input_prompt
+  li $v0, 4
+  syscall
+  
+  # Read time input (4 digits in HHMM format)
+  la $a0, time_buffer
+  li $a1, 10
+  li $v0, 8
+  syscall
+  
+  # Verify time input is 4 digits
+  la $t0, time_buffer
+  lb $t4, 0($t0)                     # First hour digit
+  lb $t5, 1($t0)                     # Second hour digit
+  lb $t6, 2($t0)                     # First minute digit
+  lb $t7, 3($t0)                     # Second minute digit
+  
+  # Check if all are valid digits
+  sub $t4, $t4, 48
+  blt $t4, 0, invalid_input
+  bgt $t4, 9, invalid_input
+  
+  sub $t5, $t5, 48
+  blt $t5, 0, invalid_input
+  bgt $t5, 9, invalid_input
+  
+  sub $t6, $t6, 48
+  blt $t6, 0, invalid_input
+  bgt $t6, 9, invalid_input
+  
+  sub $t7, $t7, 48
+  blt $t7, 0, invalid_input
+  bgt $t7, 9, invalid_input
+  
+  # Calculate time in minutes: HH*60 + MM
+  # $t4 and $t5 are hours, $t6 and $t7 are minutes
+  mul $s1, $t4, 10                   # First digit * 10
+  add $s1, $s1, $t5                  # + second digit = hours
+  mul $s1, $s1, 60                   # Hours * 60
+  
+  mul $t8, $t6, 10                   # First minute digit * 10
+  add $t8, $t8, $t7                  # + second minute digit = minutes
+  add $s1, $s1, $t8                  # Total minutes in $s1
+  
+  # Valid input - continue
   la $a0, verification_pass
   li $v0, 4
   syscall
   j continue_dashboard
   
-access_denied:
+invalid_input:
   la $a0, verification_fail
   li $v0, 4
   syscall
@@ -619,23 +934,105 @@ access_denied:
   syscall
   
 continue_dashboard:
-  # Display current time
+  # Read the input (should be 3 digits) and convert to integer
+  la $t0, input_buffer
+  lb $t1, 0($t0)                     # First digit char
+  lb $t2, 1($t0)                     # Second digit char
+  lb $t3, 2($t0)                     # Third digit char
+  
+  # Convert ASCII to decimal
+  sub $t1, $t1, 48                   # Convert '0'-'9' to 0-9
+  sub $t2, $t2, 48
+  sub $t3, $t3, 48
+  
+  # Calculate: digit1*100 + digit2*10 + digit3
+  mul $t4, $t1, 100
+  mul $t5, $t2, 10
+  add $t4, $t4, $t5
+  add $t4, $t4, $t3                  # $t4 now has the 3-digit ID
+  
+  # Calculate day from ID: day = ID % 6 (0=Monday, 1=Tuesday, ..., 5=Saturday)
+  li $t5, 6
+  div $t4, $t5
+  mfhi $s0                           # $s0 = ID % 6
+  
+  # Display current time from user input
   la $a0, current_time_str
   li $v0, 4
   syscall
-
-  # Get current day of week
-  jal get_day_of_week
-  move $s0, $v0                      # Save day index in $s0
-  li $s0, 5                          # Force Saturday (day index 5)
+  
+  # Extract hours and minutes from time_buffer
+  la $t0, time_buffer
+  lb $t1, 0($t0)                     # HH first digit
+  lb $t2, 1($t0)                     # HH second digit
+  lb $t3, 2($t0)                     # MM first digit
+  lb $t4, 3($t0)                     # MM second digit
+  
+  # Print hours
+  li $v0, 11                         # Print character (for printing digits)
+  move $a0, $t1
+  syscall
+  move $a0, $t2
+  syscall
+  
+  # Print colon
+  li $a0, 58                         # ASCII for ':'
+  li $v0, 11
+  syscall
+  
+  # Print minutes
+  move $a0, $t3
+  li $v0, 11
+  syscall
+  move $a0, $t4
+  li $v0, 11
+  syscall
+  
+  # Print newline
+  la $a0, newline
+  li $v0, 4
+  syscall
 
   # Print student line: "Student: [Your ID] | [Current Day]"
   la $a0, student_line
   li $v0, 4
   syscall
-  la $a0, student_id
-  li $v0, 4
+  
+  # Construct and print UID: U2023 + 3-digit input
+  li $a0, 85                         # ASCII 'U'
+  li $v0, 11
   syscall
+  
+  li $a0, 50                         # ASCII '2'
+  li $v0, 11
+  syscall
+  
+  li $a0, 48                         # ASCII '0'
+  li $v0, 11
+  syscall
+  
+  li $a0, 50                         # ASCII '2'
+  li $v0, 11
+  syscall
+  
+  li $a0, 51                         # ASCII '3'
+  li $v0, 11
+  syscall
+  
+  # Print the 3 input digits (they're in ASCII in the input_buffer)
+  la $t0, input_buffer
+  lb $a0, 0($t0)
+  li $v0, 11
+  syscall
+  
+  lb $a0, 1($t0)
+  li $v0, 11
+  syscall
+  
+  lb $a0, 2($t0)
+  li $v0, 11
+  syscall
+  
   la $a0, pipe
   li $v0, 4
   syscall
@@ -659,34 +1056,10 @@ continue_dashboard:
   li $v0, 4
   syscall
   
-  # Normal Timetable
-  la $a0, original_tt_header
-  li $v0, 4
-  syscall
-  la $a0, newline
-  li $v0, 4
-  syscall
+  # Display dynamic timetable based on day
+  move $a0, $s0                      # Pass day index to display_day_schedule
+  jal display_day_schedule
   
-  la $a0, original_class1
-  li $v0, 4
-  syscall
-  la $a0, newline
-  li $v0, 4
-  syscall
-  
-  la $a0, original_lunch
-  li $v0, 4
-  syscall
-  la $a0, newline
-  li $v0, 4
-  syscall
-  
-  la $a0, original_class2
-  li $v0, 4
-  syscall
-  la $a0, newline
-  li $v0, 4
-  syscall
   la $a0, newline
   li $v0, 4
   syscall
