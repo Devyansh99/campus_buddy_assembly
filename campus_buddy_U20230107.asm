@@ -16,6 +16,10 @@ total_credits_req: .word 160
 # OUTPUT STRINGS - HEADER
 # ============================================
 header:            .asciiz "=== CAMPUS BUDDY ===\n"
+input_prompt:      .asciiz "Enter the last 3 digits of your Student ID: "
+input_buffer:      .space 10
+verification_pass: .asciiz "\n✓ Welcome! Displaying your personalized dashboard...\n"
+verification_fail: .asciiz "\n✗ Incorrect ID. Access denied.\n"
 current_time_str:  .asciiz "Current Time: 12:00 PM (Saturday)\n"
 student_line:      .asciiz "Student: "
 pipe:              .asciiz " | "
@@ -88,13 +92,16 @@ robotics_note:    .asciiz "[9:00-10:00 PM] ROBOTICS LAB MEETING (Every Sunday)\n
 free_evening_slot: .asciiz "[10:00-11:00 PM] FREE TIME (Games, Personal Projects, Relaxation)\n"
 
 # Smart location recommendation logic
-location_rec_header: .asciiz "\n========== SMART LOCATION RECOMMENDATIONS ==========\n"
-hostel_2hrs:      .asciiz "[Free slot >= 2 hours] Go to HOSTEL - Rest & freshen up and study\n"
-library_short:    .asciiz "[Free slot < 2 hours] Go to LIBRARY - Study & assignments\n"
-saturday_note:    .asciiz "[SATURDAY - Your priority day] Plan longer study/rest blocks\n"
+location_rec_header: .asciiz "\n========== SMART LOCATION RECOMMENDATIONS (Personalized) ==========\n"
+location_intro:    .asciiz "Based on your profile and schedule:\n\n"
+morning_location:  .asciiz "[Morning (9-11 AM)] Go to HOSTEL ROOM - Study when your mind is fresh\n"
+midday_location:   .asciiz "[Midday (12-1 PM)] Go to LIBRARY - Study Deep Learning (DL) between lunch & ILGC class\n"
+evening_location:  .asciiz "[Evening (6-8 PM)] Go to BASKETBALL COURT - Your best time for basketball and activities\n"
+night_location:    .asciiz "[Night (9-11 PM)] Go to HOSTEL and attend GEEK ROOM Meeting\n"
+saturday_rec:      .asciiz "[SATURDAY - Your Priority Day] Use morning free time (9-11 AM) for long study sessions\n"
 evening_header:   .asciiz "\n========== EVENING ROUTINE ==========\n"
 snacks_time:      .asciiz "5:30-6:00 PM: Snack break at Mess\n"
-sports_time:      .asciiz "6:00-7:00 PM: Basketball Practice\n"
+sports_time:      .asciiz "6:00-7:00 PM: Basketball \n"
 dinner_time:      .asciiz "7:30-9:00 PM: Dinner at Mess\n"
 free_after_dinner: .asciiz "9:00-11:30 PM: Free time for assignments, clubs, friends, or rest\n"
 sleep_time:       .asciiz "11:30 PM: Recommended sleep time\n"
@@ -534,22 +541,36 @@ recommend_location:
   li $v0, 4
   syscall
   
-  # Free slot duration logic
-  la $a0, hostel_2hrs
-  li $v0, 4
-  syscall
-  la $a0, library_short
+  # Display personalized intro
+  la $a0, location_intro
   li $v0, 4
   syscall
   
-  # Check if Saturday (your priority day)
-  # If day index ($s0) == 5, it's Saturday
-  bne $s0, 5, skip_saturday_note
-  la $a0, saturday_note
+  # Display morning recommendation
+  la $a0, morning_location
   li $v0, 4
   syscall
   
-skip_saturday_note:
+  # Display midday recommendation
+  la $a0, midday_location
+  li $v0, 4
+  syscall
+  
+  # Display evening recommendation
+  la $a0, evening_location
+  li $v0, 4
+  syscall
+  
+  # Display night recommendation
+  la $a0, night_location
+  li $v0, 4
+  syscall
+  
+  # Display Saturday-specific recommendation
+  la $a0, saturday_rec
+  li $v0, 4
+  syscall
+  
   jr $ra
 
 main:
@@ -558,6 +579,46 @@ main:
   li $v0, 4
   syscall
 
+  # Input verification - ask for last 3 digits
+  la $a0, input_prompt
+  li $v0, 4
+  syscall
+  
+  # Read input (last 3 digits)
+  la $a0, input_buffer
+  li $a1, 10
+  li $v0, 8
+  syscall
+  
+  # Verify input - expected "107" (last 3 digits of U20230107)
+  la $t0, input_buffer
+  lb $t1, 0($t0)                     # First char
+  lb $t2, 1($t0)                     # Second char
+  lb $t3, 2($t0)                     # Third char
+  
+  # Check if "107" (ASCII: 1=49, 0=48, 7=55)
+  li $t4, 49                         # ASCII '1'
+  li $t5, 48                         # ASCII '0'
+  li $t6, 55                         # ASCII '7'
+  
+  bne $t1, $t4, access_denied
+  bne $t2, $t5, access_denied
+  bne $t3, $t6, access_denied
+  
+  # Access granted
+  la $a0, verification_pass
+  li $v0, 4
+  syscall
+  j continue_dashboard
+  
+access_denied:
+  la $a0, verification_fail
+  li $v0, 4
+  syscall
+  li $v0, 10                         # Exit
+  syscall
+  
+continue_dashboard:
   # Display current time
   la $a0, current_time_str
   li $v0, 4
