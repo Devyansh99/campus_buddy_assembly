@@ -36,7 +36,7 @@ divider:           .asciiz "=====================================\n"
 # ============================================
 person_header:     .asciiz "\n=== PERSONALIZATION PROFILE ===\n"
 focus_day_str:     .asciiz "Focus Day: "
-focus_day_explain: .asciiz " (Saturday is priority)\n"
+focus_day_explain: .asciiz " is the optimal day for long study sessions\n"
 activity_pref_str: .asciiz "Campus Personality: "
 personality_sports:.asciiz "Sports & Physical Activities Enthusiast\n"
 personality_library:.asciiz "Library & Study Focused Scholar\n"
@@ -58,6 +58,14 @@ time_remaining_msg: .asciiz "Time remaining: "
 minutes_msg:       .asciiz " minutes\n"
 lunch_note:        .asciiz "[Currently in LUNCH BREAK - 2 hours (12:00 PM - 2:00 PM)]\n"
 no_class_msg:      .asciiz "No more classes today!\n"
+
+# Current status messages
+current_status:    .asciiz "\n========== CURRENT STATUS ==========\n"
+status_in_class:   .asciiz "✓ Currently IN CLASS\n"
+status_in_lunch:   .asciiz "✓ Currently IN LUNCH BREAK\n"
+status_free:       .asciiz "✓ Currently FREE TIME\n"
+next_event_msg:    .asciiz "Next event in "
+next_class_in:     .asciiz " minutes\n"
 
 # ============================================
 # OUTPUT STRINGS - ACADEMIC OVERVIEW
@@ -103,8 +111,8 @@ morning_location:  .asciiz "[Morning (9-11 AM)] Go to HOSTEL ROOM - Study when y
 midday_location:   .asciiz "[Midday (12-1 PM)] Go to LIBRARY - Study Deep Learning (DL) between lunch & ILGC class\n"
 evening_location:  .asciiz "[Evening (6-8 PM)] Go to BASKETBALL COURT - Your best time for basketball and activities\n"
 night_location:    .asciiz "[Night (9-11 PM)] Go to HOSTEL and attend GEEK ROOM Meeting\n"
-saturday_rec:      .asciiz "[SATURDAY - Your Priority Day] Use morning free time (9-11 AM) for long study sessions\n"
-evening_header:   .asciiz "\n========== EVENING ROUTINE ==========\n"
+priority_day_rec:  .asciiz "[YOUR PRIORITY DAY] Use morning free time for long study sessions\n"
+activity_header:  .asciiz "\n========== RECOMMENDED ACTIVITIES FOR FREE TIME ==========\n"
 snacks_time:      .asciiz "5:30-6:00 PM: Snack break at Mess\n"
 sports_time:      .asciiz "6:00-7:00 PM: Basketball \n"
 dinner_time:      .asciiz "7:30-9:00 PM: Dinner at Mess\n"
@@ -206,13 +214,13 @@ saturday_free3:    .asciiz "5:00-9:00 [FREE SLOT - 4h]"
 # ============================================
 
 # Original Timetable Labels
-original_tt_header: .asciiz "\n========== TIMETABLE (Saturday) =========="
+original_tt_header: .asciiz "\n========== TIMETABLE =========="
 original_class1:   .asciiz "11:00-12:00 Electromagnetics - 2203"
 original_lunch:    .asciiz "12:00-2:00 LUNCH at Mess"
 original_class2:   .asciiz "2:00-5:00 ILGC - 2201"
 
 # Smart Study Schedule Labels
-smart_study_header: .asciiz "\n========== FREE SLOTS & STUDY PLAN (Saturday) =========="
+smart_study_header: .asciiz "\n========== FREE SLOTS & STUDY PLAN =========="
 breakfast_slot:    .asciiz "8:00-9:00 [1 hour FRESHUP & BREAKFAST]"
 suggestion_breakfast: .asciiz "  → Freshen up at Hostel, then breakfast at Mess"
 study_slot1:       .asciiz "9:00-11:00 [2 hours FREE]"
@@ -283,28 +291,47 @@ display_personalization:
   li $v0, 4
   syscall
   
+  # ===== CALCULATE FOCUS DAY from input ID =====
+  # We already have the 3-digit input converted in continue_dashboard
+  # Recall: we calculated day as ID % 6 and stored in $s0
+  
   # Focus Day
   la $a0, focus_day_str
   li $v0, 4
   syscall
-  lw $a0, focus_day
+  move $a0, $s0                      # Use already calculated day
   li $v0, 1
   syscall
   la $a0, focus_day_explain
   li $v0, 4
   syscall
   
-  # Campus Personality based on (ID >> 2) % 4
+  # ===== CALCULATE CAMPUS PERSONALITY from input ID =====
+  # Formula: (Last digit >> 2) % 4
+  # Last digit is in the 3-digit input, third position
+  
   la $a0, activity_pref_str
   li $v0, 4
   syscall
-  lw $t0, campus_personality
   
-  # Display personality type based on value
-  beq $t0, 0, personality_library_type
-  beq $t0, 1, personality_sports_type
-  beq $t0, 2, personality_wellness_type
-  beq $t0, 3, personality_social_type
+  # Get the last digit of input (3rd digit)
+  la $t0, input_buffer
+  lb $t1, 2($t0)                     # Third character (last digit)
+  sub $t1, $t1, 48                   # Convert ASCII to decimal
+  
+  # Perform bitwise right shift by 2: $t1 >> 2
+  sra $t1, $t1, 2                    # Arithmetic right shift
+  
+  # Modulo 4: $t1 % 4
+  li $t2, 4
+  div $t1, $t2
+  mfhi $t1                           # $t1 = $t1 % 4 (personality type 0-3)
+  
+  # Display personality type based on calculated value
+  beq $t1, 0, personality_library_type
+  beq $t1, 1, personality_sports_type
+  beq $t1, 2, personality_wellness_type
+  beq $t1, 3, personality_social_type
   j skip_personality
   
 personality_library_type:
@@ -331,13 +358,34 @@ personality_social_type:
   syscall
   
 skip_personality:
-  # Optimal Study Time based on sum of digits % 5
+  # ===== CALCULATE OPTIMAL STUDY TIME from input ID =====
+  # Formula: (Sum of all 3 digits) % 5
+  
   la $a0, study_time_str
   li $v0, 4
   syscall
-  lw $t1, optimal_study_time
   
-  # Display study time based on value
+  # Get all 3 digits and sum them
+  la $t0, input_buffer
+  lb $t1, 0($t0)                     # First digit
+  lb $t2, 1($t0)                     # Second digit
+  lb $t3, 2($t0)                     # Third digit
+  
+  # Convert ASCII to decimal
+  sub $t1, $t1, 48
+  sub $t2, $t2, 48
+  sub $t3, $t3, 48
+  
+  # Sum them up
+  add $t1, $t1, $t2
+  add $t1, $t1, $t3                  # $t1 = sum of all digits
+  
+  # Modulo 5: $t1 % 5
+  li $t2, 5
+  div $t1, $t2
+  mfhi $t1                           # $t1 = $t1 % 5 (study time 0-4)
+  
+  # Display study time based on calculated value
   beq $t1, 0, study_morning_type
   beq $t1, 1, study_afternoon_type
   beq $t1, 2, study_evening_type
@@ -551,28 +599,54 @@ recommend_location:
   li $v0, 4
   syscall
   
-  # Display morning recommendation
+  # Determine recommendation based on time of day and personality
+  # Get personality type to adjust recommendations
+  la $t0, input_buffer
+  lb $t1, 2($t0)                     # Last digit
+  sub $t1, $t1, 48
+  sra $t1, $t1, 2
+  li $t2, 4
+  div $t1, $t2
+  mfhi $t1                           # $t1 = personality (0-3)
+  
+  # Display time-based location recommendations
   la $a0, morning_location
   li $v0, 4
   syscall
   
-  # Display midday recommendation
   la $a0, midday_location
   li $v0, 4
   syscall
   
-  # Display evening recommendation
+  # Adjust evening location based on personality
+  beq $t1, 1, sports_evening_location
+  beq $t1, 2, wellness_evening_location
+  
+  # Default evening location
+  la $a0, evening_location
+  li $v0, 4
+  syscall
+  j after_evening_location
+  
+sports_evening_location:
+  la $a0, basketball_activity
+  li $v0, 4
+  syscall
+  j after_evening_location
+  
+wellness_evening_location:
   la $a0, evening_location
   li $v0, 4
   syscall
   
+after_evening_location:
   # Display night recommendation
   la $a0, night_location
   li $v0, 4
   syscall
   
-  # Display Saturday-specific recommendation
-  la $a0, saturday_rec
+  # Display priority day recommendation
+  la $a0, priority_day_rec
   li $v0, 4
   syscall
   
@@ -839,6 +913,184 @@ display_saturday:
   syscall
   jr $ra
 
+# ========================================
+# Get current activity and next class
+# Input: $a0 = time in minutes (0-1439)
+#        $a1 = day index (0-5)
+# Output: $v0 = current activity type
+#         $v1 = minutes until next event
+# ========================================
+get_current_activity:
+  move $t0, $a0                      # $t0 = time in minutes
+  move $t1, $a1                      # $t1 = day index
+  
+  # Time ranges for each day (in minutes from midnight)
+  # Monday: 9:00(540)-10:15(615) DL | 12:00(720)-13:00(780) TOC | 13:00-14:00 LUNCH | 14:00-15:15 FCS | 15:15-17:00 FREE
+  # We'll use simple comparisons for each day
+  
+  beq $t1, 0, check_monday_activity
+  beq $t1, 1, check_tuesday_activity
+  beq $t1, 2, check_wednesday_activity
+  beq $t1, 3, check_thursday_activity
+  beq $t1, 4, check_friday_activity
+  beq $t1, 5, check_saturday_activity
+  
+  li $v0, 0                          # Default: no activity
+  jr $ra
+
+check_monday_activity:
+  # Monday: 9-10:15 DL | 12-1 TOC | 1-2 Lunch | 2-3:15 FCS
+  li $t2, 540                        # 9:00 AM
+  li $t3, 615                        # 10:15 AM
+  bge $t0, $t2, check_mon_after_start1
+  li $v0, 0                          # Before 9 AM - free
+  sub $v1, $t2, $t0                  # Time until first class
+  jr $ra
+  
+check_mon_after_start1:
+  ble $t0, $t3, mon_in_class1
+  # After 10:15 AM
+  li $t2, 720                        # 12:00 PM
+  bge $t0, $t2, check_mon_after_start2
+  li $v0, 0                          # Free between classes
+  sub $v1, $t2, $t0
+  jr $ra
+  
+mon_in_class1:
+  li $v0, 1                          # In class
+  sub $v1, $t3, $t0
+  jr $ra
+
+check_mon_after_start2:
+  li $t3, 780                        # 1:00 PM
+  ble $t0, $t3, mon_in_class2
+  li $t2, 840                        # 2:00 PM
+  bge $t0, $t2, check_mon_after_lunch
+  li $v0, 2                          # In lunch
+  sub $v1, $t2, $t0
+  jr $ra
+
+mon_in_class2:
+  li $v0, 1                          # In TOC class
+  sub $v1, $t3, $t0
+  jr $ra
+
+check_mon_after_lunch:
+  li $t3, 915                        # 3:15 PM
+  ble $t0, $t3, mon_in_class3
+  li $v0, 0                          # Free after 3:15
+  li $v1, 0
+  jr $ra
+
+mon_in_class3:
+  li $v0, 1                          # In FCS class
+  sub $v1, $t3, $t0
+  jr $ra
+
+check_saturday_activity:
+  # Saturday: 9-11 FREE | 11-12 EM Tut | 12-2 FREE | 2-5 ILGC
+  li $t2, 540                        # 9:00 AM
+  li $t3, 660                        # 11:00 AM
+  bge $t0, $t2, check_sat_after_900
+  li $v0, 0                          # Before 9 AM
+  sub $v1, $t2, $t0
+  jr $ra
+
+check_sat_after_900:
+  ble $t0, $t3, sat_in_free1
+  li $t2, 720                        # 12:00 PM
+  bge $t0, $t2, check_sat_after_1100
+  li $v0, 1                          # In EM class (11-12)
+  sub $v1, $t2, $t0
+  jr $ra
+
+sat_in_free1:
+  li $v0, 0                          # Free 9-11 AM
+  sub $v1, $t3, $t0
+  jr $ra
+
+check_sat_after_1100:
+  li $t3, 840                        # 2:00 PM
+  ble $t0, $t3, sat_in_free2
+  li $t2, 1020                       # 5:00 PM
+  bge $t0, $t2, sat_after_classes
+  li $v0, 1                          # In ILGC (2-5)
+  sub $v1, $t2, $t0
+  jr $ra
+
+sat_in_free2:
+  li $v0, 0                          # Free 12-2 PM
+  sub $v1, $t3, $t0
+  jr $ra
+
+sat_after_classes:
+  li $v0, 0                          # Free after 5 PM
+  li $v1, 0
+  jr $ra
+
+check_tuesday_activity:
+  # Tuesday: 9-11 FREE | 11-12:15 EM | 12:15-2 LUNCH | 2-3:15 SMAI | 3:15-4 FREE | 4-5 NT
+  li $t2, 540                        # 9:00 AM
+  li $t3, 660                        # 11:00 AM
+  bge $t0, $t2, check_tue_after_900
+  li $v0, 0
+  sub $v1, $t2, $t0
+  jr $ra
+
+check_tue_after_900:
+  ble $t0, $t3, tue_in_free1
+  li $t2, 735                        # 12:15 PM
+  bge $t0, $t2, check_tue_after_1100
+  li $v0, 1                          # In EM (11-12:15)
+  sub $v1, $t2, $t0
+  jr $ra
+
+tue_in_free1:
+  li $v0, 0                          # Free 9-11
+  sub $v1, $t3, $t0
+  jr $ra
+
+check_tue_after_1100:
+  li $t3, 840                        # 2:00 PM
+  ble $t0, $t3, tue_in_lunch
+  li $t2, 915                        # 3:15 PM
+  bge $t0, $t2, check_tue_after_smai
+  li $v0, 1                          # In SMAI (2-3:15)
+  sub $v1, $t2, $t0
+  jr $ra
+
+tue_in_lunch:
+  li $v0, 2                          # In lunch
+  sub $v1, $t3, $t0
+  jr $ra
+
+check_tue_after_smai:
+  li $t3, 960                        # 4:00 PM
+  ble $t0, $t3, tue_in_free2
+  li $t2, 1020                       # 5:00 PM
+  bge $t0, $t2, tue_after_all
+  li $v0, 1                          # In NT (4-5)
+  sub $v1, $t2, $t0
+  jr $ra
+
+tue_in_free2:
+  li $v0, 0                          # Free 3:15-4
+  sub $v1, $t3, $t0
+  jr $ra
+
+tue_after_all:
+  li $v0, 0
+  li $v1, 0
+  jr $ra
+
+check_wednesday_activity:
+  check_thursday_activity:
+  check_friday_activity:
+  # Similar structure for other days - for now return free
+  li $v0, 0
+  li $v1, 0
+  jr $ra
+
 main:
   # Print header
   la $a0, header
@@ -1051,6 +1303,95 @@ continue_dashboard:
   # Display personalization profile
   jal display_personalization
   
+  # ========== CURRENT STATUS ==========
+  la $a0, current_status
+  li $v0, 4
+  syscall
+  
+  # Calculate current activity based on input time and day
+  # Convert time input to minutes: HH*60 + MM
+  la $t0, time_buffer
+  lb $t1, 0($t0)                     # HH first digit
+  lb $t2, 1($t0)                     # HH second digit
+  lb $t3, 2($t0)                     # MM first digit
+  lb $t4, 3($t0)                     # MM second digit
+  
+  # Convert ASCII to decimal
+  sub $t1, $t1, 48
+  sub $t2, $t2, 48
+  sub $t3, $t3, 48
+  sub $t4, $t4, 48
+  
+  # Calculate hours and minutes
+  mul $t5, $t1, 10
+  add $t5, $t5, $t2                  # $t5 = hours
+  mul $t5, $t5, 60                   # hours * 60
+  mul $t6, $t3, 10
+  add $t6, $t6, $t4                  # $t6 = minutes
+  add $t5, $t5, $t6                  # $t5 = total minutes
+  
+  # Call get_current_activity with time and day
+  move $a0, $t5                      # Time in minutes
+  move $a1, $s0                      # Day index
+  jal get_current_activity
+  
+  # $v0 = activity type (0=free, 1=class, 2=lunch)
+  # $v1 = minutes until next event
+  move $s2, $v0                      # Save activity type
+  move $s3, $v1                      # Save minutes remaining
+  
+  # Display current activity
+  beq $s2, 0, display_free_status
+  beq $s2, 1, display_class_status
+  beq $s2, 2, display_lunch_status
+  j skip_status_display
+  
+display_class_status:
+  la $a0, status_in_class
+  li $v0, 4
+  syscall
+  la $a0, next_event_msg
+  li $v0, 4
+  syscall
+  move $a0, $s3
+  li $v0, 1
+  syscall
+  la $a0, next_class_in
+  li $v0, 4
+  syscall
+  j skip_status_display
+  
+display_lunch_status:
+  la $a0, status_in_lunch
+  li $v0, 4
+  syscall
+  la $a0, next_event_msg
+  li $v0, 4
+  syscall
+  move $a0, $s3
+  li $v0, 1
+  syscall
+  la $a0, next_class_in
+  li $v0, 4
+  syscall
+  j skip_status_display
+  
+display_free_status:
+  la $a0, status_free
+  li $v0, 4
+  syscall
+  la $a0, next_event_msg
+  li $v0, 4
+  syscall
+  move $a0, $s3
+  li $v0, 1
+  syscall
+  la $a0, next_class_in
+  li $v0, 4
+  syscall
+  
+skip_status_display:
+  
   # ========== TODAY'S SCHEDULE ==========
   la $a0, today_schedule_header
   li $v0, 4
@@ -1142,28 +1483,8 @@ continue_dashboard:
   li $v0, 4
   syscall
   
-  # ========== EVENING ROUTINE ==========
-  la $a0, evening_header
-  li $v0, 4
-  syscall
-  la $a0, snacks_time
-  li $v0, 4
-  syscall
-  la $a0, sports_time
-  li $v0, 4
-  syscall
-  la $a0, dinner_time
-  li $v0, 4
-  syscall
-  la $a0, free_after_dinner
-  li $v0, 4
-  syscall
-  la $a0, sleep_time
-  li $v0, 4
-  syscall
-  la $a0, newline
-  li $v0, 4
-  syscall
+  # Free Slots & Study Plan section is now complete
+  # Activities are displayed dynamically based on personality
 
   # ========== ACADEMIC OVERVIEW ==========
   la $a0, academic_header
@@ -1285,27 +1606,67 @@ continue_dashboard:
   li $v0, 4
   syscall
 
-  # ========== SMART SUGGESTIONS & ACTIVITY RECOMMENDATIONS ==========
-  la $a0, smart_suggestions_header
+  # ========== DYNAMIC ACTIVITIES BASED ON FREE TIME & PERSONALITY ==========
+  # Activities will be suggested based on:
+  # 1. Current time and free slots available
+  # 2. Personality type (affects which activities are suggested)
+  
+  la $a0, activity_header
   li $v0, 4
   syscall
   
-  # Activity recommendations
+  # Calculate personality type again to determine activities
+  la $t0, input_buffer
+  lb $t1, 2($t0)                     # Last digit
+  sub $t1, $t1, 48
+  sra $t1, $t1, 2
+  li $t2, 4
+  div $t1, $t2
+  mfhi $t1                           # $t1 = personality (0-3)
+  
+  # Based on personality and current time, suggest activities
+  beq $t1, 0, suggest_library_activities
+  beq $t1, 1, suggest_sports_activities
+  beq $t1, 2, suggest_wellness_activities
+  beq $t1, 3, suggest_social_activities
+  j skip_activities
+  
+suggest_sports_activities:
+  # Sports Enthusiast - suggest sports activities
   la $a0, basketball_activity
   li $v0, 4
   syscall
+  j suggest_common_activities
+  
+suggest_library_activities:
+  # Library Scholar - suggest study focused activities
   la $a0, geek_room_note
   li $v0, 4
   syscall
-  la $a0, robotics_note
+  j suggest_common_activities
+  
+suggest_wellness_activities:
+  # Wellness Advocate - suggest balanced activities
+  la $a0, basketball_activity
   li $v0, 4
   syscall
+  j suggest_common_activities
+  
+suggest_social_activities:
+  # Social Butterfly - suggest group activities
+  la $a0, geek_room_note
+  li $v0, 4
+  syscall
+  
+suggest_common_activities:
   la $a0, free_evening_slot
   li $v0, 4
   syscall
   la $a0, newline
   li $v0, 4
   syscall
+  
+skip_activities:
   
   # Display subject difficulty ratings
   jal display_subject_difficulty
